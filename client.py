@@ -1,7 +1,6 @@
 import json
 import requests
 import argparse
-from typing import Any
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -19,6 +18,48 @@ OLLAMA_MODEL = "llama3.2"
 
 HOST = "0.0.0.0"
 PORT = 8080
+
+
+# ============================================================
+# LLM SYSTEM PROMPT
+# ============================================================
+
+SYSTEM_PROMPT = """
+You are a helpful assistant.
+
+You have access to MCP tools.
+
+Use an MCP tool ONLY when it is relevant to the user's question.
+
+Available tools:
+
+1. get_weather
+   - Use ONLY for weather-related questions.
+   - The user must be asking about weather, temperature,
+     rain, clouds, climate, or weather conditions.
+   - The state must be an Indian state.
+
+2. get_wind_speed
+   - Use ONLY for questions about wind speed or wind conditions.
+   - The state must be an Indian state.
+
+For general questions such as:
+- Java
+- Python
+- programming
+- databases
+- system design
+- algorithms
+- mathematics
+- general knowledge
+
+answer directly without calling an MCP tool.
+
+NEVER call a tool simply because it is available.
+
+Before calling a tool, first determine whether the user's question
+actually requires that tool.
+"""
 
 
 # ============================================================
@@ -268,7 +309,6 @@ class OllamaClient:
 
             "tools": tools,
 
-            # IMPORTANT:
             # Return one JSON response instead of
             # multiple streaming JSON objects.
             "stream": False
@@ -387,6 +427,10 @@ class Orchestrator:
 
         messages = [
             {
+                "role": "system",
+                "content": SYSTEM_PROMPT
+            },
+            {
                 "role": "user",
                 "content": user_question
             }
@@ -427,7 +471,8 @@ class Orchestrator:
             print(
                 json.dumps(
                     assistant_message,
-                    indent=2
+                    indent=2,
+                    ensure_ascii=False
                 )
             )
 
@@ -476,9 +521,17 @@ class Orchestrator:
                     {}
                 )
 
-                print("\n========================================")
-                print("LLM REQUESTED TOOL")
-                print("========================================")
+                print(
+                    "\n========================================"
+                )
+
+                print(
+                    "LLM REQUESTED TOOL"
+                )
+
+                print(
+                    "========================================"
+                )
 
                 print(
                     f"Tool: {tool_name}"
@@ -502,7 +555,8 @@ class Orchestrator:
                 print(
                     json.dumps(
                         tool_result,
-                        indent=2
+                        indent=2,
+                        ensure_ascii=False
                     )
                 )
 
